@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "to_server": "pnpm --filter=@code-cell/server",
-    "to_client": "pnpm --filter=@code-cell/client",
+    "to_server": "pnpm --filter=email-collector-server",
+    "to_client": "pnpm --filter=email-collector-client",
     "clean": "find ./ -name node_modules -type d -exec rm -rf {} +",
     "dev": "pnpm -r --parallel --stream run dev",
     "test": "echo \"Error: no test specified\" && exit 1"
