@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker';
 export function queryBuilder(
   sql,
   cb = (resolved) => {
-    console.log(JSON.stringify(resolved, null, 2));
+    console.log('Query results: ', JSON.stringify(resolved, null, 2));
     return resolved;
   }
 ) {
@@ -31,7 +31,10 @@ export function queryBuilder(
 
 export const getAllFromUsers = queryBuilder(
   /* sql */ `
-     SELECT * FROM users
+    SELECT 
+        * 
+    FROM users
+    ORDER BY created_at DESC
     ;`,
   (resolved) => {
     const [results] = resolved;
@@ -69,18 +72,39 @@ export const addUserToUsers = queryBuilder(/* sql */ `
     VALUES (?)
     ;`);
 
-export const addNFakeUsersToUsers = (N = 5) => {
+export const addNFakeUsersToUsers = (
+  N = 5,
+  fromDate = '2000-01-01',
+  closeConnection = false,
+  connection = LOCAL_CONNECTION
+) => {
   if (N < 1) return false;
 
+  // // Works only with .query(), NOT with .execute():
+  //   const valuesArr = Array.from({ length: N }, () => [
+  //     faker.internet.email(),
+  //     faker.date.between({ from: fromDate, to: Date.now() }),
+  //   ]);
+  //   return queryBuilder(/* sql */ `
+  //     INSERT INTO
+  //         users (email, created_at)
+  //     VALUES ?
+  //    ;`)([valuesArr], closeConnection, connection);
+
+  // Works with connection.execute():
   const valuesArr = [];
   for (let i = 0; i < N; i++) {
     valuesArr.push(faker.internet.email());
-    valuesArr.push(faker.date.between({ from: '2000-01-01', to: Date.now() }));
+    valuesArr.push(faker.date.between({ from: fromDate, to: Date.now() }));
   }
 
   return queryBuilder(/* sql */ `
-    INSERT INTO 
+    INSERT INTO
        users (email, created_at)
-   VALUES ${'(?, ?), '.repeat(N - 1) + '(?, ?)'}
-   ;`)(valuesArr);
+   VALUES ${new Array(N).fill('(?, ?)').join(', ')}
+   ;`)(valuesArr, closeConnection, connection);
 };
+
+export const clearAllFromUsers = queryBuilder(/* sql */ `
+    TRUNCATE users
+   ;`);
