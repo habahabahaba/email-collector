@@ -60,7 +60,8 @@ export const getCountFromUsers = queryBuilder(
   (resolved) => {
     const [results] = resolved;
 
-    console.log(`Total number of users is ${results[0]['count']}.`);
+    console.log(`
+Total number of users is ${results[0]['count']}.`);
 
     return results[0]['count'];
   }
@@ -108,3 +109,126 @@ export const addNFakeUsersToUsers = (
 export const clearAllFromUsers = queryBuilder(/* sql */ `
     TRUNCATE users
    ;`);
+
+export const getEarliestDateFromUsers = (
+  dateFormat = '%Y-%b-%d %H:%i',
+  closeConnection = false,
+  connection = LOCAL_CONNECTION
+) =>
+  queryBuilder(
+    /* sql */ `
+    SELECT
+    DATE_FORMAT (
+            MIN(created_at) OVER(), 
+            ?
+        ) AS earliest_date
+    FROM
+        users
+    LIMIT 1
+   ;`,
+    (resolved) => {
+      const [results] = resolved;
+
+      console.log(`
+The earliest date is ${results[0]['earliest_date']}.`);
+
+      return results[0]['earliest_date'];
+    }
+  )([dateFormat], closeConnection, connection);
+
+export const getEarliestUsersFromUsers = queryBuilder(
+  /* sql */ `
+SELECT
+  email,
+  created_at
+FROM
+  users
+WHERE
+  created_at = (
+    SELECT
+     MIN(created_at)
+    FROM
+      users
+  )
+   ;`,
+
+  (resolved) => {
+    const [results] = resolved;
+
+    console.log(
+      `
+The earliest ${results.length > 1 ? results.length + 'users are' : 'user is'}:`
+    );
+    results.forEach((res) => {
+      for (let key in res) {
+        console.log(`${key}: ${res[key]}`);
+      }
+      console.log('------------------');
+    });
+
+    return results;
+  }
+);
+
+function countByCB(
+  groupByCol,
+  countCol = 'count',
+  message = `
+Count by ${groupByCol}:`
+) {
+  return (resolved) => {
+    const [results] = resolved;
+    const resultObj = results.reduce((obj, res) => {
+      obj[res[groupByCol]] = res[countCol];
+      return obj;
+    }, {});
+    console.log(message);
+    for (const groupByCol in resultObj) {
+      console.log(`${groupByCol}: ${resultObj[groupByCol]}`);
+    }
+
+    return resultObj;
+  };
+}
+
+export const getUsersCountByMonthFromUsers = queryBuilder(
+  /* sql */ `
+SELECT
+  MONTHNAME(created_at) AS 'month',
+  COUNT(*) AS 'count'
+FROM
+  users
+GROUP BY
+  month
+ORDER BY count DESC
+   ;`,
+  countByCB(
+    'month',
+    'count',
+    `
+Join-dates count by month (descending):`
+  )
+);
+
+export const getUsersCountByEmailProviderFromUsers = queryBuilder(
+  /* sql */ `
+SELECT
+  IFNULL(
+    REGEXP_REPLACE(email, '^.+@([a-zA-Z0-9\-\_]+)\..+$', '$1'),
+    'invalid_email'
+  ) AS provider,
+  COUNT(*) AS total_users
+FROM
+  users
+GROUP BY
+  provider
+ORDER BY
+  total_users DESC
+   ;`,
+  countByCB(
+    'provider',
+    'total_users',
+    `
+User count by email-provider (descending):`
+  )
+);
