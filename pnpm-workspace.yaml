@@ -6,6 +6,8 @@ packages:
 catalog:
   node: ^23.2.0
   express: ^4.21.1
+  http-proxy-middleware: ^3.0.0
+  body-parser: ^1.20.3
   mysql2: ^3.11.4
   '@faker-js/faker': ^9.2.0
-  '@dotenvx/dotenvx': ^1.25.1
+  '@dotenvx/dotenvx': ^1.26.0

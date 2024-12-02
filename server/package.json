@@ -1,5 +1,5 @@
 {
-  "name": "email-collector-server",
+  "name": "@email-collector/server",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -12,10 +12,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@faker-js/faker": "catalog:"
+    "@email-collector/client": "workspace:*",
+    "@faker-js/faker": "catalog:",
+    "express": "catalog:",
+    "body-parser": "catalog:"
   },
   "devDependencies": {
     "@dotenvx/dotenvx": "catalog:",
-    "mysql2": "catalog:"
+    "mysql2": "catalog:",
+    "http-proxy-middleware": "catalog:"
   }
 }

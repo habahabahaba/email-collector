@@ -63,15 +63,24 @@ export const getCountFromUsers = queryBuilder(
     console.log(`
 Total number of users is ${results[0]['count']}.`);
 
-    return results[0]['count'];
+    return { total_users: results[0]['count'] };
   }
 );
 
-export const addUserToUsers = queryBuilder(/* sql */ `
+export const addUserToUsers = queryBuilder(
+  /* sql */ `
      INSERT INTO 
         users (email)
     VALUES (?)
-    ;`);
+    ;`,
+  (resolved) => {
+    const [results] = resolved;
+
+    console.log('[addUserToUsers]results: ', results);
+
+    return results;
+  }
+);
 
 export const addNFakeUsersToUsers = (
   N = 5,
@@ -178,14 +187,12 @@ Count by ${groupByCol}:`
 ) {
   return (resolved) => {
     const [results] = resolved;
-    const resultObj = results.reduce((obj, res) => {
-      obj[res[groupByCol]] = res[countCol];
-      return obj;
-    }, {});
     console.log(message);
-    for (const groupByCol in resultObj) {
-      console.log(`${groupByCol}: ${resultObj[groupByCol]}`);
-    }
+    const resultObj = results.reduce((resultObj, res) => {
+      console.log(`${res[groupByCol]}: ${res[countCol]}`);
+      resultObj[res[groupByCol]] = res[countCol];
+      return resultObj;
+    }, {});
 
     return resultObj;
   };
@@ -210,11 +217,30 @@ Join-dates count by month (descending):`
   )
 );
 
+export const getUsersCountByYearFromUsers = queryBuilder(
+  /* sql */ `
+SELECT
+  YEAR(created_at) AS 'year',
+  COUNT(*) AS 'count'
+FROM
+  users
+GROUP BY
+  year
+ORDER BY count DESC
+   ;`,
+  countByCB(
+    'year',
+    'count',
+    `
+Join-dates count by year (descending):`
+  )
+);
+
 export const getUsersCountByEmailProviderFromUsers = queryBuilder(
   /* sql */ `
 SELECT
   IFNULL(
-    REGEXP_REPLACE(email, '^.+@([a-zA-Z0-9\-\_]+)\..+$', '$1'),
+    REGEXP_REPLACE(email, '^.+@([a-zA-Z0-9\-\_]+)\.[a-z0-9\-\_\.]+$', '$1'),
     'invalid_email'
   ) AS provider,
   COUNT(*) AS total_users
